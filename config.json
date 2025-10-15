@@ -1,0 +1,10 @@
+{
+    "server_port": 8080,
+    "log_level": "info",
+    "max_connections": 100,
+    "debug_mode": false,
+    "allowed_origins": "*",
+    "session_timeout": 86400,
+    "email_service": "smtp",
+    "cache_ttl": 3600
+}
