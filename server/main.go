@@ -6,22 +6,30 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 var config = make(map[string]string)
 
+var cyan = color.New(color.FgCyan)
+var green = color.New(color.FgGreen)
+var red = color.New(color.FgRed)
+var yellow = color.New(color.FgYellow)
+
 func main() {
-	fmt.Println("Starting server...")
+	cyan.Println("TetriON WebServer")
+	green.Println("Starting server...")
 	LoadEnv()
 	LoadConfig()
-	//InitRedis()
+	InitRedis()
 }
 
 func LoadEnv() {
-	fmt.Println("Loading .env file...")
+	yellow.Println("Loading .env file...")
 	var file, err = os.OpenFile("..\\.env", os.O_RDONLY, 0644)
 	if err != nil {
-		fmt.Println("Error loading .env file:", err)
+		red.Println("Error loading .env file:", err)
 		return
 	}
 	defer file.Close()
@@ -41,17 +49,17 @@ func LoadEnv() {
 		os.Setenv(key, value)
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading .env file:", err)
+		red.Println("Error reading .env file:", err)
 		return
 	}
-	fmt.Println(".env file loaded successfully.")
+	green.Println(".env file loaded successfully.")
 }
 
 func LoadConfig() {
-	fmt.Println("Loading config.json file...")
+	yellow.Println("Loading config.json file...")
 	var file, err = os.OpenFile("..\\config.json", os.O_RDONLY, 0644)
 	if err != nil {
-		fmt.Println("Error loading config.json file:", err)
+		red.Println("Error loading config.json file:", err)
 		return
 	}
 	defer file.Close()
@@ -61,7 +69,7 @@ func LoadConfig() {
 		fmt.Println("Error decoding config.json file:", err)
 		return
 	}
-	fmt.Println("config.json file loaded successfully.")
-	fmt.Println("Config:", config)
+	green.Println("config.json file loaded successfully.")
+	green.Println("Config:", config)
 }
 
