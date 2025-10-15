@@ -1,0 +1,47 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build artifacts
+/bin/
+/build/
+
+# Output of go coverage tool
+*.coverprofile
+
+# Dependency directories
+/vendor/
+
+# Go modules
+go.sum
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker files (optional if using)
+docker-compose.override.yml
