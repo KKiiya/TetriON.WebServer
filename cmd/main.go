@@ -15,7 +15,7 @@ func main() {
 	fmt.Println("Starting server...")
 	redisAddr := os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
-		redisAddr = "localhost:6379"
+		redisAddr = "localhost:6379" // Default address
 	}
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisDBStr := os.Getenv("REDIS_DB")
