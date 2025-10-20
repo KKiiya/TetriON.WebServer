@@ -21,8 +21,8 @@ var (
 
 var config any // replace with your actual config struct
 
-// logWithTime prints a timestamped message with the given color.
-func logWithTime(c *color.Color, level string, msg string, a ...any) {
+// LogWithTime prints a timestamped message with the given color.
+func LogWithTime(c *color.Color, level string, msg string, a ...any) {
 	timestamp := time.Now().Format("15:04:05")
 
 	// If there are arguments but the msg contains no formatting verbs, append a `%v`
@@ -45,7 +45,7 @@ func main() {
 	cyan.Println("======================================================================")
 
 	fmt.Println()
-	logWithTime(green, "INFO", "🚀 Starting server initialization...")
+	LogWithTime(green, "INFO", "🚀 Starting server initialization...")
 	fmt.Println()
 
 	LoadEnv()
@@ -53,16 +53,16 @@ func main() {
 	InitRedis()
 	fmt.Println()
 
-	logWithTime(green, "INFO", "✅ All systems initialized successfully!")
+	LogWithTime(green, "INFO", "✅ All systems initialized successfully!")
 	fmt.Println("======================================================================")
 }
 
 func LoadEnv() {
-	logWithTime(yellow, "INFO", "⚙️  Loading environment variables (.env)...")
+	LogWithTime(yellow, "INFO", "⚙️  Loading environment variables (.env)...")
 
 	file, err := os.OpenFile("../.env", os.O_RDONLY, 0644)
 	if err != nil {
-		logWithTime(red, "ERROR", "❌ Failed to load .env file: %v", err)
+		LogWithTime(red, "ERROR", "❌ Failed to load .env file: %v", err)
 		return
 	}
 	defer file.Close()
@@ -85,32 +85,32 @@ func LoadEnv() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		logWithTime(red, "ERROR", "❌ Error reading .env file: %v", err)
+		LogWithTime(red, "ERROR", "❌ Error reading .env file: %v", err)
 		return
 	}
 
-	logWithTime(green, "INFO", "✅ Loaded %d environment variables successfully.", count)
+	LogWithTime(green, "INFO", "✅ Loaded %d environment variables successfully.", count)
 	fmt.Println()
 }
 
 func LoadConfig() {
-	logWithTime(yellow, "INFO", "🧩 Loading configuration (config.json)...")
+	LogWithTime(yellow, "INFO", "🧩 Loading configuration (config.json)...")
 
 	file, err := os.OpenFile("../config.json", os.O_RDONLY, 0644)
 	if err != nil {
-		logWithTime(red, "ERROR", "❌ Failed to open config.json: %v", err)
+		LogWithTime(red, "ERROR", "❌ Failed to open config.json: %v", err)
 		return
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
-		logWithTime(red, "ERROR", "❌ Error decoding config.json: %v", err)
+		LogWithTime(red, "ERROR", "❌ Error decoding config.json: %v", err)
 		return
 	}
 
-	logWithTime(green, "INFO", "✅ Configuration loaded successfully.")
-	logWithTime(white, "INFO", "📋 Configuration details:")
+	LogWithTime(green, "INFO", "✅ Configuration loaded successfully.")
+	LogWithTime(white, "INFO", "📋 Configuration details:")
 	for key, value := range config.(map[string]any) {
 		white.Printf("			%s: %+v\n", key, value)
 	}
