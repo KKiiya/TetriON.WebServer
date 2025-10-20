@@ -6,38 +6,72 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
 
-var config = make(map[string]string)
+var (
+	cyan   = color.New(color.FgCyan).Add(color.Bold)
+	green  = color.New(color.FgGreen).Add(color.Bold)
+	yellow = color.New(color.FgYellow).Add(color.Bold)
+	red    = color.New(color.FgRed).Add(color.Bold)
+	white  = color.New(color.FgWhite)
+)
 
-var cyan = color.New(color.FgCyan)
-var green = color.New(color.FgGreen)
-var red = color.New(color.FgRed)
-var yellow = color.New(color.FgYellow)
+var config any // replace with your actual config struct
+
+// logWithTime prints a timestamped message with the given color.
+func logWithTime(c *color.Color, level string, msg string, a ...any) {
+	timestamp := time.Now().Format("15:04:05")
+
+	// If there are arguments but the msg contains no formatting verbs, append a `%v`
+	if len(a) > 0 && !strings.ContainsAny(msg, "%") {
+		msg = msg + " %v"
+	}
+
+	formatted := fmt.Sprintf(msg, a...)
+	// Print: [HH:MM:SS][LEVEL] EMOJI formatted-message
+	c.Printf("[%s] [%s] %s\n", timestamp, level, formatted)
+}
 
 func main() {
-	cyan.Println("TetriON WebServer")
-	green.Println("Starting server...")
+	cyan.Println("======================================================================")
+	cyan.Println("		 ______    __      _ ____  _  ____")
+	cyan.Println("		/_  __/__ / /_____(_) __ \\/ |/ / /")
+	cyan.Println("		 / / / -_) __/ __/ / /_/ /    /_/ ")
+	cyan.Println("		/_/  \\__/\\__/_/ /_/\\____/_/|_(_)  ")
+	cyan.Println("		  							  ")
+	cyan.Println("======================================================================")
+
+	fmt.Println()
+	logWithTime(green, "INFO", "🚀 Starting server initialization...")
+	fmt.Println()
+
 	LoadEnv()
 	LoadConfig()
 	InitRedis()
+	fmt.Println()
+
+	logWithTime(green, "INFO", "✅ All systems initialized successfully!")
+	fmt.Println("======================================================================")
 }
 
 func LoadEnv() {
-	yellow.Println("Loading .env file...")
-	var file, err = os.OpenFile("..\\.env", os.O_RDONLY, 0644)
+	logWithTime(yellow, "INFO", "⚙️  Loading environment variables (.env)...")
+
+	file, err := os.OpenFile("../.env", os.O_RDONLY, 0644)
 	if err != nil {
-		red.Println("Error loading .env file:", err)
+		logWithTime(red, "ERROR", "❌ Failed to load .env file: %v", err)
 		return
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	count := 0
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == "" || line[0] == '#' {
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		parts := strings.SplitN(line, "=", 2)
@@ -47,29 +81,38 @@ func LoadEnv() {
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
 		os.Setenv(key, value)
+		count++
 	}
+
 	if err := scanner.Err(); err != nil {
-		red.Println("Error reading .env file:", err)
+		logWithTime(red, "ERROR", "❌ Error reading .env file: %v", err)
 		return
 	}
-	green.Println(".env file loaded successfully.")
+
+	logWithTime(green, "INFO", "✅ Loaded %d environment variables successfully.", count)
+	fmt.Println()
 }
 
 func LoadConfig() {
-	yellow.Println("Loading config.json file...")
-	var file, err = os.OpenFile("..\\config.json", os.O_RDONLY, 0644)
+	logWithTime(yellow, "INFO", "🧩 Loading configuration (config.json)...")
+
+	file, err := os.OpenFile("../config.json", os.O_RDONLY, 0644)
 	if err != nil {
-		red.Println("Error loading config.json file:", err)
+		logWithTime(red, "ERROR", "❌ Failed to open config.json: %v", err)
 		return
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
-		fmt.Println("Error decoding config.json file:", err)
+		logWithTime(red, "ERROR", "❌ Error decoding config.json: %v", err)
 		return
 	}
-	green.Println("config.json file loaded successfully.")
-	green.Println("Config:", config)
-}
 
+	logWithTime(green, "INFO", "✅ Configuration loaded successfully.")
+	logWithTime(white, "INFO", "📋 Configuration details:")
+	for key, value := range config.(map[string]any) {
+		white.Printf("			%s: %+v\n", key, value)
+	}
+	fmt.Println()
+}
