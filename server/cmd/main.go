@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"TetriON.WebServer/server/internal/redis"
 	"github.com/fatih/color"
 )
 
@@ -50,7 +51,7 @@ func main() {
 
 	LoadEnv()
 	LoadConfig()
-	InitRedis()
+	redis.InitRedis()
 	fmt.Println()
 
 	LogWithTime(green, "INFO", "✅ All systems initialized successfully!")
