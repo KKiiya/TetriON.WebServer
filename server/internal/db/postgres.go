@@ -3,35 +3,44 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
+	"strconv"
+
 	"TetriON.WebServer/server/internal/config"
+	"TetriON.WebServer/server/internal/logging"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var DB *pgxpool.Pool
 
-func InitPostgres() {
-	cfg := config.GetConfig().Postgres
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
-		cfg.User,
-		cfg.Password,
-		cfg.Host,
-		cfg.Port,
-		cfg.DBName,
+func Init() {
+	logging.LogWithTime(logging.Yellow, "INFO", "🔧 Initializing PostgreSQL database connection...")
+	port, err := strconv.Atoi(config.GetEnv(config.ENV_POSTGRES_PORT))
+	if err != nil {
+		logging.LogWithTime(logging.Red, "ERROR", "❌ Invalid port number: %v", err)
+	}
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		config.GetEnv(config.ENV_POSTGRES_USER),   
+		config.GetEnv(config.ENV_POSTGRES_PASSWORD),
+		config.GetEnv(config.ENV_POSTGRES_HOST),    
+		port,
+		config.GetEnv(config.ENV_POSTGRES_DBNAME),
+		config.GetEnv(config.ENV_POSTGRES_SSLMODE),
 	)
-	var err error
+	logging.LogWithTime(logging.White, "INFO", "📡 Connecting to PostgreSQL at: %s", dsn)
 	DB, err = pgxpool.New(context.Background(), dsn)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
+		logging.LogWithTime(logging.Red, "ERROR", "❌ Unable to connect to database: %v", err)
+		return
 	}
 	// Test the connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err = DB.Ping(ctx)
 	if err != nil {
-		log.Fatalf("Unable to ping the database: %v\n", err)
+		logging.LogWithTime(logging.Red, "ERROR", "❌ Unable to ping the database: %v", err)
+		return
 	}
-	log.Println("Connected to PostgreSQL database successfully.")
+	logging.LogWithTime(logging.Green, "INFO", "✅ Connected to PostgreSQL database successfully.")
 }

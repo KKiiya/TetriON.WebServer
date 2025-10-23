@@ -2,6 +2,7 @@ package main
 
 import (
 	"TetriON.WebServer/server/internal/config"
+	"TetriON.WebServer/server/internal/db"
 	"TetriON.WebServer/server/internal/logging"
 	"TetriON.WebServer/server/internal/redis"
 )
@@ -21,7 +22,9 @@ func main() {
 
 	config.LoadEnv()
 	config.LoadConfig()
-	redis.InitRedis()
+	
+	redis.Init()
+	db.Init()
 	logging.LogLine(logging.White, "")
 
 	logging.LogWithTime(logging.Green, "INFO", "✅ All systems initialized successfully!")
