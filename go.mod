@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3
-	github.com/redis/go-redis/v9 v9.14.0
+	github.com/redis/go-redis/v9 v9.16.0
 	nhooyr.io/websocket v1.8.17
 )
 
