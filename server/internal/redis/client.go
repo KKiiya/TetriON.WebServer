@@ -38,7 +38,7 @@ func LogWithTime(c *color.Color, level string, msg string, a ...any) {
 }
 
 // --- Redis initialization ---
-func InitRedis() {
+func Init() {
 	LogWithTime(yellow, "INFO", "🔧 Initializing Redis...")
 
 	redisAddr := os.Getenv("REDIS_ADDR")
