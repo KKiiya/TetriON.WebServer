@@ -16,27 +16,28 @@ var (
 
 // Configuration keys
 var (
-	CONFIG_SERVER_PORT 		= "server_port"
-	CONFIG_LOG_LEVEL    	= "log_level"
-	CONFIG_MAX_CONNECTIONS 	= "max_connections"
-	CONFIG_DEBUG_MODE      	= "debug_mode"
-	CONFIG_ALLOW_ORIGINS   	= "allow_origins"
-	CONFIG_SESSION_TIMEOUT  = "session_timeout"
-	CONFIG_EMAIL_SERVICE	= "email_service"
-	CONFIG_CACHE_TTL        = "cache_ttl"
+	CONFIG_SERVER_PORT     = "server_port"
+	CONFIG_LOG_LEVEL       = "log_level"
+	CONFIG_MAX_CONNECTIONS = "max_connections"
+	CONFIG_DEBUG_MODE      = "debug_mode"
+	CONFIG_ALLOW_ORIGINS   = "allow_origins"
+	CONFIG_SESSION_TIMEOUT = "session_timeout"
+	CONFIG_EMAIL_SERVICE   = "email_service"
+	CONFIG_CACHE_TTL       = "cache_ttl"
 )
 
 // Environment variable keys
 var (
-	ENV_REDIS_ADDRESS       = "REDIS_ADDR"
-	ENV_REDIS_PASSWORD      = "REDIS_PASSWORD"
-	ENV_POSTGRES_USER       = "POSTGRES_USER"
-	ENV_POSTGRES_PASSWORD   = "POSTGRES_PASSWORD"
-	ENV_POSTGRES_HOST       = "POSTGRES_HOST"
-	ENV_POSTGRES_PORT       = "POSTGRES_PORT"
-	ENV_POSTGRES_DBNAME     = "POSTGRES_DBNAME"
-	ENV_POSTGRES_SSLMODE    = "POSTGRES_SSLMODE"
-	ENV_JWT_SECRET		 	= "JWT_SECRET"
+	ENV_REDIS_ADDRESS        = "REDIS_ADDR"
+	ENV_REDIS_PASSWORD       = "REDIS_PASSWORD"
+	ENV_POSTGRES_USER        = "POSTGRES_USER"
+	ENV_POSTGRES_PASSWORD    = "POSTGRES_PASSWORD"
+	ENV_POSTGRES_HOST        = "POSTGRES_HOST"
+	ENV_POSTGRES_PORT        = "POSTGRES_PORT"
+	ENV_POSTGRES_DBNAME      = "POSTGRES_DBNAME"
+	ENV_POSTGRES_SSLMODE     = "POSTGRES_SSLMODE"
+	ENV_JWT_SECRET           = "JWT_SECRET"
+	ENV_JWT_EXPIRATION_HOURS = "JWT_EXPIRATION_HOURS"
 )
 
 func LoadEnv() {
@@ -94,7 +95,7 @@ func LoadConfig() {
 	logging.LogWithTime(logging.Green, "INFO", "✅ Configuration loaded successfully.")
 	logging.LogWithTime(logging.White, "INFO", "📋 Configuration details:")
 	for key, value := range config {
-		logging.LogLine(logging.White, "			" + key, value)
+		logging.LogLine(logging.White, "			"+key, value)
 	}
 	fmt.Println()
 }
@@ -117,4 +118,4 @@ func GetEnvOrDefault(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
-}	
+}
