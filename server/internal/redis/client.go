@@ -82,3 +82,29 @@ func Init() {
 
 	LogWithTime(green, "SUCCESS", "✅ Connected to Redis at %s successfully. (%s)", redisAddr, ping)
 }
+
+func PublishMessage(ctx context.Context, message string) error {
+	err := redisClient.Publish(ctx, redisChannel, message).Err()
+	if err != nil {
+		LogWithTime(red, "ERROR", "❌ Failed to publish message: %v", err)
+		return err
+	}
+	LogWithTime(green, "INFO", "📤 Published to channel '%s': %s", redisChannel, message)
+	return nil
+}
+
+// --- Subscribe and listen for messages ---
+func SubscribeMessages(ctx context.Context) {
+	pubsub := redisClient.Subscribe(ctx, redisChannel)
+	defer pubsub.Close()
+
+	ch := pubsub.Channel()
+	LogWithTime(cyan, "INFO", "📡 Subscribed to channel '%s'", redisChannel)
+
+	for msg := range ch {
+		LogWithTime(white, "RECV", "📨 Received message: %s", msg.Payload)
+		// TODO: Handle message (e.g., broadcast to WebSocket clients)
+	}
+
+	LogWithTime(yellow, "INFO", "❌ Subscription closed for channel '%s'", redisChannel)
+}
