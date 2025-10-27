@@ -74,7 +74,7 @@ func GetColumn(query string, args ...interface{}) ([]interface{}, error) {
 
 	var results []any
 	for rows.Next() {
-		var value interface{}
+		var value any
 		if err := rows.Scan(&value); err != nil {
 			return nil, err
 		}
