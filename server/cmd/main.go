@@ -7,6 +7,7 @@ import (
 	"TetriON.WebServer/server/internal/db"
 	"TetriON.WebServer/server/internal/logging"
 	"TetriON.WebServer/server/internal/redis"
+	"TetriON.WebServer/server/internal/websocket"
 )
 
 func main() {
@@ -27,6 +28,7 @@ func main() {
 
 	redis.Init()
 	db.Init()
+	websocket.Init()
 
 	logging.LogWithTime(logging.Green, "INFO", "✅ All systems initialized successfully!")
 	logging.LogLine(logging.White, "======================================================================")
