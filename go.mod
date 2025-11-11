@@ -3,10 +3,10 @@ module TetriON.WebServer
 go 1.25.3
 
 require (
+	github.com/coder/websocket v1.8.14
 	github.com/fatih/color v1.18.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/redis/go-redis/v9 v9.16.0
-	github.com/coder/websocket v1.8.14
 )
 
 require (
