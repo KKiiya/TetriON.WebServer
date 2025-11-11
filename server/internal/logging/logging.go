@@ -14,7 +14,12 @@ var (
 	Yellow = color.New(color.FgYellow).Add(color.Bold)
 	Red    = color.New(color.FgRed).Add(color.Bold)
 	White  = color.New(color.FgWhite)
+	Gray   = color.New(color.FgHiBlack)
 )
+
+func Log(c *color.Color, msg string, a ...any) {
+	c.Printf(msg+"\n", a...)
+}
 
 func LogLine(c *color.Color, a ...any) {
 	c.Println(a...)
@@ -22,6 +27,10 @@ func LogLine(c *color.Color, a ...any) {
 
 func LogInfo(msg string, a ...any) {
 	LogWithTime(Green, "INFO", msg, a...)
+}
+
+func LogInfoC(c *color.Color, msg string, a ...any) {
+	LogWithTime(c, "INFO", msg, a...)
 }
 
 func LogError(msg string, a ...any) {
