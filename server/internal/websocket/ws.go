@@ -2,7 +2,9 @@ package websocket
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/coder/websocket"
@@ -13,15 +15,17 @@ import (
 )
 
 var initialized = false
+var endpoints = make(map[string]func(http.ResponseWriter, *http.Request))
 
 func Init() {
 	if initialized {
 		return
 	}
-	port := config.GetEnv(config.CONFIG_SERVER_PORT)
-	logging.LogInfo(port)
+	port := fmt.Sprint(config.GetConfig(config.CONFIG_SERVER_PORT))
+	timeoutVal := int(reflect.ValueOf(config.GetConfig(config.CONFIG_SESSION_TIMEOUT)).Int())
+	timeout := time.Duration(timeoutVal) * time.Second
 
-	logging.LogInfo("Starting WebSocket on port %s", port)
+	logging.LogInfo("Starting WebSocket on  http://127.0.0.1:%s", port)
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocket.Accept(w, r, nil)
@@ -31,7 +35,7 @@ func Init() {
 		}
 		defer c.CloseNow()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
 		var v any
@@ -45,12 +49,33 @@ func Init() {
 
 		c.Close(websocket.StatusNormalClosure, "")
 	})
+	
+	LoadEndpoints()
+
 	initialized = true
+	http.ListenAndServe(":"+port, nil)
 	logging.LogInfo("WebSocket successfully initialized!")
 }
 
 func HandleFunction(path string, handler func(http.ResponseWriter, *http.Request)) {
-	http.HandleFunc(path, handler)
+	if _, exists := endpoints[path]; exists {
+		logging.LogError("WebSocket handler for path %s already exists.", path)
+		return
+	}
+	endpoints[path] = handler
+	if initialized {
+		http.HandleFunc(path, handler)
+		logging.LogInfoC(logging.Yellow, "Registered WebSocket endpoint at %s", path)
+	}
+}
+
+func LoadEndpoints() {
+	logging.LogInfoC(logging.Yellow, "Loading WebSocket endpoints...")
+	for path, handler := range endpoints {
+		http.HandleFunc(path, handler)
+		logging.Log(logging.Gray,"Registered WebSocket endpoint: %s", path)
+	}
+	logging.LogInfo("All WebSocket endpoints loaded.")
 }
 
 func IsInitialized() bool {
