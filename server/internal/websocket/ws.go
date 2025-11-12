@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/coder/websocket"
@@ -21,11 +21,13 @@ func Init() {
 	if initialized {
 		return
 	}
+
 	port := fmt.Sprint(config.GetConfig(config.CONFIG_SERVER_PORT))
-	timeoutVal := int(reflect.ValueOf(config.GetConfig(config.CONFIG_SESSION_TIMEOUT)).Int())
-	timeout := time.Duration(timeoutVal) * time.Second
 
 	logging.LogInfo("Starting WebSocket on  http://127.0.0.1:%s", port)
+
+	timeoutVal, _ := strconv.Atoi(fmt.Sprint(config.GetConfig(config.CONFIG_SESSION_TIMEOUT)))
+	timeout := time.Duration(timeoutVal) * time.Second
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocket.Accept(w, r, nil)
@@ -49,11 +51,15 @@ func Init() {
 
 		c.Close(websocket.StatusNormalClosure, "")
 	})
-	
+
 	LoadEndpoints()
 
 	initialized = true
-	http.ListenAndServe(":"+port, nil)
+	go func() {
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			logging.LogError("WebSocket server error: %v", err)
+		}
+	}()
 	logging.LogInfo("WebSocket successfully initialized!")
 }
 
@@ -73,7 +79,7 @@ func LoadEndpoints() {
 	logging.LogInfoC(logging.Yellow, "Loading WebSocket endpoints...")
 	for path, handler := range endpoints {
 		http.HandleFunc(path, handler)
-		logging.Log(logging.Gray,"Registered WebSocket endpoint: %s", path)
+		logging.Log(logging.Gray, "Registered WebSocket endpoint: %s", path)
 	}
 	logging.LogInfo("All WebSocket endpoints loaded.")
 }

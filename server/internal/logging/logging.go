@@ -2,6 +2,8 @@ package logging
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +18,24 @@ var (
 	White  = color.New(color.FgWhite)
 	Gray   = color.New(color.FgHiBlack)
 )
+
+var (
+	logFile *os.File
+	logger  *log.Logger
+)
+
+func Init() error {
+	filename := fmt.Sprintf("logs/log_%s.txt", time.Now().Format("2006-01-02_15-04"))
+
+	var err error
+	logFile, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %v", err)
+	}
+
+	logger = log.New(logFile, "", log.LstdFlags|log.Lshortfile)
+	return nil
+}
 
 func Log(c *color.Color, msg string, a ...any) {
 	c.Printf(msg+"\n", a...)
@@ -57,4 +77,9 @@ func LogWithTime(c *color.Color, level string, msg string, a ...any) {
 	formatted := fmt.Sprintf(msg, a...)
 	// Print: [HH:MM:SS][LEVEL] EMOJI formatted-message
 	c.Printf("[%s] [%s] %s\n", timestamp, level, formatted)
+
+	if logger != nil {
+		plainLine := fmt.Sprintf("[%s] [%s] %s\n", timestamp, level, formatted)
+		logger.Print(plainLine)
+	}
 }
