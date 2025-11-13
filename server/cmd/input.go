@@ -12,7 +12,6 @@ import (
 
 var (
 	commands = make(map[string]*Command)
-
 	stopChan = make(chan struct{})
 )
 
@@ -38,19 +37,27 @@ func Listen() {
 			input = strings.TrimSpace(input)
 			arguments := strings.Fields(input)[1:]
 
-			if command, exists := commands[input]; exists && command.enabled {
-				command.run(arguments)
+			if command, exists := commands[input]; exists {
+				if command.enabled {
+					command.run(arguments)
+				} else {
+					logging.White.Printf("Command '%s' is disabled.\n", input)
+				}
 			} else {
-				fmt.Printf("Unknown command: %s. Type 'help' to see available commands\n", input)
+				logging.White.Printf("Unknown command: %s. Type 'help' to see available commands\n", input)
 			}
 		}
 	}()
 
 	<-stopChan
-	fmt.Println("Server has been stopped.")
+	logging.White.Println("Server has been stopped.")
 }
 
 func RegisterCommand(command string, alias []string, description string, usage string, action func(arguments ...any)) *Command {
+	if _, exists := commands[command]; exists {
+		logging.LogDebug("Command '%s' already exists", command)
+		return commands[command]
+	}
 	cmd := &Command{
 		name:        command,
 		aliases:     alias,
@@ -81,15 +88,20 @@ func ToggleCommand(command string) {
 // PRIVATE FUNCTION
 func registerDefaultCommands() {
 	RegisterCommand("help", []string{"h", "?"}, "Show every command in console", "help", func(arguments ...any) {
-
+		logging.Gray.Println("------------------------------------------------------")
+		logging.White.Println("Available commands:")
+		for name, command := range commands {
+			logging.White.Printf("%s: %s\n", name, command.description)
+		}
+		logging.Gray.Println("------------------------------------------------------")
 	})
 
 	RegisterCommand("stop", []string{"quit", "exit", "shut", "kill"}, "Stop the WebServer", "stop", func(arguments ...any) {
-		fmt.Println("Stopping server...")
+		logging.White.Println("Stopping server...")
 		close(stopChan)
 	})
 
 	RegisterCommand("status", []string{}, "Show the current server status", "status", func(arguments ...any) {
-		fmt.Println("Server is currently running.")
+		logging.White.Println("Server is currently running.")
 	})
 }
