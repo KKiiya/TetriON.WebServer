@@ -6,8 +6,8 @@ import (
 	"TetriON.WebServer/server/internal/config"
 	"TetriON.WebServer/server/internal/db"
 	"TetriON.WebServer/server/internal/logging"
-	"TetriON.WebServer/server/internal/redis"
-	"TetriON.WebServer/server/internal/websocket"
+	"TetriON.WebServer/server/internal/net/redis"
+	"TetriON.WebServer/server/internal/net/websocket"
 )
 
 func main() {
