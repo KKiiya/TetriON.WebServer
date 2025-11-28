@@ -10,6 +10,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
+	"TetriON.WebServer/server/internal/api"
 	"TetriON.WebServer/server/internal/config"
 	"TetriON.WebServer/server/internal/logging"
 )
@@ -55,6 +56,9 @@ func Init() {
 		logging.LogDebug("Received: %v", v)
 		c.Close(websocket.StatusNormalClosure, "")
 	})
+
+	// Register API routes (authentication, health check, etc.)
+	api.SetupRoutes(mux)
 
 	// Register other endpoints
 	LoadEndpoints(mux)
