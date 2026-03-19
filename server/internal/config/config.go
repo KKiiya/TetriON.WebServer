@@ -20,7 +20,7 @@ var (
 	CONFIG_LOG_LEVEL       = "log_level"
 	CONFIG_MAX_CONNECTIONS = "max_connections"
 	CONFIG_DEBUG_MODE      = "debug_mode"
-	CONFIG_ALLOW_ORIGINS   = "allow_origins"
+	CONFIG_ALLOW_ORIGINS   = "allowed_origins"
 	CONFIG_SESSION_TIMEOUT = "session_timeout"
 	CONFIG_EMAIL_SERVICE   = "email_service"
 	CONFIG_CACHE_TTL       = "cache_ttl"
@@ -101,6 +101,14 @@ func LoadConfig() {
 }
 
 func GetConfig(key string) any {
+	if key == CONFIG_ALLOW_ORIGINS {
+		if value, ok := config[key]; ok {
+			return value
+		}
+		if legacy, ok := config["allow_origins"]; ok {
+			return legacy
+		}
+	}
 	return config[key]
 }
 

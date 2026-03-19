@@ -7,6 +7,7 @@ import (
 
 	"TetriON.WebServer/server/internal/db"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -50,8 +51,8 @@ func CreateUser(user *User) error {
 	).Scan(&user.ID)
 
 	if err != nil {
-		// Check for unique constraint violations
-		if err.Error() == "duplicate key value violates unique constraint" {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return ErrUserAlreadyExists
 		}
 		return err

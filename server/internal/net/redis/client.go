@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"TetriON.WebServer/server/internal/net/websocket"
 	"github.com/fatih/color"
 	"github.com/redis/go-redis/v9"
 )
@@ -84,6 +85,10 @@ func Init() {
 }
 
 func PublishMessage(ctx context.Context, message string) error {
+	if redisClient == nil {
+		return fmt.Errorf("redis client is not initialized")
+	}
+
 	err := redisClient.Publish(ctx, redisChannel, message).Err()
 	if err != nil {
 		LogWithTime(red, "ERROR", "❌ Failed to publish message: %v", err)
@@ -95,6 +100,11 @@ func PublishMessage(ctx context.Context, message string) error {
 
 // --- Subscribe and listen for messages ---
 func SubscribeMessages(ctx context.Context) {
+	if redisClient == nil {
+		LogWithTime(red, "ERROR", "❌ SubscribeMessages called before Redis initialization")
+		return
+	}
+
 	pubsub := redisClient.Subscribe(ctx, redisChannel)
 	defer pubsub.Close()
 
@@ -103,8 +113,25 @@ func SubscribeMessages(ctx context.Context) {
 
 	for msg := range ch {
 		LogWithTime(white, "RECV", "📨 Received message: %s", msg.Payload)
-		// TODO: Handle message (e.g., broadcast to WebSocket clients)
+		websocket.Broadcast(map[string]any{
+			"type":      "redis_broadcast",
+			"channel":   msg.Channel,
+			"payload":   msg.Payload,
+			"timestamp": time.Now().Unix(),
+		})
 	}
 
 	LogWithTime(yellow, "INFO", "❌ Subscription closed for channel '%s'", redisChannel)
+}
+
+func Close() {
+	if redisClient == nil {
+		return
+	}
+	if err := redisClient.Close(); err != nil {
+		LogWithTime(red, "ERROR", "❌ Error closing Redis client: %v", err)
+		return
+	}
+	LogWithTime(white, "INFO", "🔒 Redis connection closed.")
+	redisClient = nil
 }

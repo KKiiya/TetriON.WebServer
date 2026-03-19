@@ -18,7 +18,8 @@ import (
 var (
 	initialized = false
 	endpoints   = make(map[string]func(http.ResponseWriter, *http.Request))
-	server      *http.Server // <--- keep reference to server
+	server      *http.Server
+	hub         *Hub
 )
 
 func Init() {
@@ -34,28 +35,14 @@ func Init() {
 
 	// Create a custom multiplexer
 	mux := http.NewServeMux()
+	hub = NewHub()
+	go hub.Run()
 
-	// WebSocket main endpoint
-	mux.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
-		c, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			logging.LogError("WebSocket accept error: %v", err)
-			return
-		}
-		defer c.CloseNow()
-
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-
-		var v any
-		if err := wsjson.Read(ctx, c, &v); err != nil {
-			logging.LogError("Read error: %v", err)
-			return
-		}
-
-		logging.LogDebug("Received: %v", v)
-		c.Close(websocket.StatusNormalClosure, "")
+	// WebSocket endpoints
+	mux.HandleFunc("/api/ws", func(w http.ResponseWriter, r *http.Request) {
+		handleWSClient(w, r, timeout)
 	})
+	mux.HandleFunc("/api/ws/auth", AuthWSHandler)
 
 	// Register API routes (authentication, health check, etc.)
 	api.SetupRoutes(mux)
@@ -87,7 +74,7 @@ func HandleFunction(path string, handler func(http.ResponseWriter, *http.Request
 	}
 	endpoints[path] = handler
 	if initialized && server != nil {
-		// note: we need to rebuild mux if adding dynamically after init
+		// This map is applied only during Init().
 		logging.LogInfoC(logging.Yellow, "Registered WebSocket endpoint at %s (pending mux reload)", path)
 	}
 }
@@ -117,10 +104,56 @@ func Stop() {
 		return
 	}
 
+	hub = nil
 	initialized = false
 	logging.LogInfo("WebSocket server stopped cleanly.")
 }
 
 func IsInitialized() bool {
 	return initialized
+}
+
+func Broadcast(payload any) {
+	if hub == nil {
+		return
+	}
+	hub.Broadcast(payload)
+}
+
+func handleWSClient(w http.ResponseWriter, r *http.Request, timeout time.Duration) {
+	if hub == nil {
+		http.Error(w, "websocket hub not initialized", http.StatusServiceUnavailable)
+		return
+	}
+
+	conn, err := websocket.Accept(w, r, nil)
+	if err != nil {
+		logging.LogError("WebSocket accept error: %v", err)
+		return
+	}
+
+	clientID := fmt.Sprintf("%s-%d", r.RemoteAddr, time.Now().UnixNano())
+	client := NewClient(clientID, conn)
+	hub.Register(client)
+
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+	defer conn.Close(websocket.StatusNormalClosure, "bye")
+	defer hub.Unregister(client)
+
+	_ = wsjson.Write(ctx, conn, map[string]any{
+		"type":    "welcome",
+		"message": "connected",
+	})
+
+	go client.WritePump(ctx)
+	client.ReadPump(ctx, func(v any) {
+		msg := map[string]any{
+			"type":      "ws_message",
+			"client_id": clientID,
+			"payload":   v,
+			"timestamp": time.Now().Unix(),
+		}
+		hub.Broadcast(msg)
+	})
 }

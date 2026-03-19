@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"TetriON.WebServer/server/internal/logging"
 )
 
 var (
-	commands = make(map[string]*Command)
-	stopChan = make(chan struct{})
+	commands       = make(map[string]*Command)
+	commandAliases = make(map[string]string)
+	stopChan       = make(chan struct{})
+	stopOnce       sync.Once
 )
 
 type Command struct {
@@ -20,7 +23,7 @@ type Command struct {
 	description string
 	usage       string
 	aliases     []string
-	run         func(arguments ...any)
+	run         func(arguments ...string)
 	enabled     bool
 }
 
@@ -35,16 +38,29 @@ func Listen() {
 			fmt.Print("> ")
 			input, _ := reader.ReadString('\n')
 			input = strings.TrimSpace(input)
-			arguments := strings.Fields(input)[1:]
+			if input == "" {
+				continue
+			}
 
-			if command, exists := commands[input]; exists {
+			parts := strings.Fields(strings.ToLower(input))
+			if len(parts) == 0 {
+				continue
+			}
+
+			commandName := parts[0]
+			arguments := parts[1:]
+			if canonical, exists := commandAliases[commandName]; exists {
+				commandName = canonical
+			}
+
+			if command, exists := commands[commandName]; exists {
 				if command.enabled {
-					command.run(arguments)
+					command.run(arguments...)
 				} else {
-					logging.White.Printf("Command '%s' is disabled.\n", input)
+					logging.White.Printf("Command '%s' is disabled.\n", commandName)
 				}
 			} else {
-				logging.White.Printf("Unknown command: %s. Type 'help' to see available commands\n", input)
+				logging.White.Printf("Unknown command: %s. Type 'help' to see available commands\n", commandName)
 			}
 		}
 	}()
@@ -53,7 +69,8 @@ func Listen() {
 	logging.White.Println("Server has been stopped.")
 }
 
-func RegisterCommand(command string, alias []string, description string, usage string, action func(arguments ...any)) *Command {
+func RegisterCommand(command string, alias []string, description string, usage string, action func(arguments ...string)) *Command {
+	command = strings.ToLower(command)
 	if _, exists := commands[command]; exists {
 		logging.LogDebug("Command '%s' already exists", command)
 		return commands[command]
@@ -67,10 +84,18 @@ func RegisterCommand(command string, alias []string, description string, usage s
 		enabled:     true,
 	}
 	commands[command] = cmd
+	for _, a := range alias {
+		commandAliases[strings.ToLower(a)] = command
+	}
 	return cmd
 }
 
 func ToggleCommand(command string) {
+	command = strings.ToLower(command)
+	if canonical, exists := commandAliases[command]; exists {
+		command = canonical
+	}
+
 	if command, exists := commands[command]; exists {
 		command.enabled = !command.enabled
 		var status string
@@ -81,13 +106,13 @@ func ToggleCommand(command string) {
 		}
 		logging.LogDebug("Command '%s' %s", command, status)
 	} else {
-		logging.LogDebug("Command '%s' doesn't exist")
+		logging.LogDebug("Command '%s' doesn't exist", command)
 	}
 }
 
 // PRIVATE FUNCTION
 func registerDefaultCommands() {
-	RegisterCommand("help", []string{"h", "?"}, "Show every command in console", "help", func(arguments ...any) {
+	RegisterCommand("help", []string{"h", "?"}, "Show every command in console", "help", func(arguments ...string) {
 		logging.Gray.Println("------------------------------------------------------")
 		logging.White.Println("Available commands:")
 		for name, command := range commands {
@@ -96,12 +121,14 @@ func registerDefaultCommands() {
 		logging.Gray.Println("------------------------------------------------------")
 	})
 
-	RegisterCommand("stop", []string{"quit", "exit", "shut", "kill"}, "Stop the WebServer", "stop", func(arguments ...any) {
+	RegisterCommand("stop", []string{"quit", "exit", "shut", "kill"}, "Stop the WebServer", "stop", func(arguments ...string) {
 		logging.White.Println("Stopping server...")
-		close(stopChan)
+		stopOnce.Do(func() {
+			close(stopChan)
+		})
 	})
 
-	RegisterCommand("status", []string{}, "Show the current server status", "status", func(arguments ...any) {
+	RegisterCommand("status", []string{}, "Show the current server status", "status", func(arguments ...string) {
 		logging.White.Println("Server is currently running.")
 	})
 }

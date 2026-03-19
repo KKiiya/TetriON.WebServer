@@ -8,6 +8,7 @@ import (
 	"TetriON.WebServer/server/internal/logging"
 	"TetriON.WebServer/server/internal/net/redis"
 	"TetriON.WebServer/server/internal/net/websocket"
+	"TetriON.WebServer/server/internal/worker"
 )
 
 func main() {
@@ -22,6 +23,9 @@ func main() {
 	logging.LogLine(logging.White, "")
 	logging.LogWithTime(logging.White, "DEBUG", "🚀 Starting server initialization...")
 	logging.LogLine(logging.White, "")
+	if err := logging.Init(); err != nil {
+		logging.LogWarning("Log file output is disabled: %v", err)
+	}
 
 	config.LoadEnv()
 	config.LoadConfig()
@@ -33,6 +37,22 @@ func main() {
 	logging.LogWithTime(logging.Green, "INFO", "✅ All systems initialized successfully!")
 	logging.LogLine(logging.White, "======================================================================")
 	logging.LogLine(logging.White, "")
-	redis.PublishMessage(context.Background(), "REDIS ON!")
+
+	rootCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	keyspaceSub := worker.NewKeyspaceSubscriber()
+	keyspaceSub.Start(rootCtx)
+
+	if err := redis.PublishMessage(context.Background(), "REDIS ON!"); err != nil {
+		logging.LogWarning("Unable to publish startup message to Redis: %v", err)
+	}
+
 	Listen()
+
+	cancel()
+	keyspaceSub.Stop()
+	websocket.Stop()
+	db.Close()
+	redis.Close()
 }

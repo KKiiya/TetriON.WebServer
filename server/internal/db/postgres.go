@@ -18,10 +18,12 @@ var DB *pgxpool.Pool
 
 func Init() {
 	logging.LogWithTime(logging.Yellow, "INFO", "🔧 Initializing PostgreSQL database connection...")
+
 	port, err := strconv.Atoi(config.GetEnv(config.ENV_POSTGRES_PORT))
 	if err != nil {
 		logging.LogWithTime(logging.Red, "ERROR", "❌ Invalid port number: %v", err)
 	}
+
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		config.GetEnv(config.ENV_POSTGRES_USER),
 		config.GetEnv(config.ENV_POSTGRES_PASSWORD),
@@ -30,6 +32,7 @@ func Init() {
 		config.GetEnv(config.ENV_POSTGRES_DBNAME),
 		config.GetEnv(config.ENV_POSTGRES_SSLMODE),
 	)
+	
 	DB, err = pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		logging.LogWithTime(logging.Red, "ERROR", "❌ Unable to connect to database: %v", err)
